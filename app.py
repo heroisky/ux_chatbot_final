@@ -6,9 +6,13 @@ import uuid
 import re
 import json
 import time
+import os
+import zipfile
+import gdown
+import shutil          # for moving nested folder contents
 
 app = Flask(__name__)
-app.secret_key = 'change-this-to-a-random-secret-key'
+app.secret_key = 'change-this-to-a-random-secret-key'  # CHANGE THIS!
 
 # ------------------- MySQL Configuration -------------------
 db_config = {
@@ -21,24 +25,75 @@ db_config = {
 def get_db_connection():
     return mysql.connector.connect(**db_config)
 
-# ------------------- Load Models -------------------
-model_path = "./qwen2.5"   # change to your model path
+# ------------------- Smart Download & Extract (handles nested folders) -------------------
+def download_and_extract(file_id, zip_path, extract_to):
+    """
+    Download a zip file from Google Drive and extract it.
+    If the zip contains a single top-level folder, its contents are moved up.
+    """
+    if os.path.exists(extract_to) and os.listdir(extract_to):
+        print(f"✓ Model already present in {extract_to}, skipping download.")
+        return
+
+    print(f"Downloading model from Google Drive (file ID: {file_id})...")
+    url = f"https://drive.google.com/uc?id={file_id}"
+    gdown.download(url, zip_path, quiet=False)
+
+    # Temporary extraction directory
+    temp_extract = extract_to + "_temp"
+    os.makedirs(temp_extract, exist_ok=True)
+
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(temp_extract)
+
+    # Check if the zip contains a single folder
+    items = os.listdir(temp_extract)
+    if len(items) == 1 and os.path.isdir(os.path.join(temp_extract, items[0])):
+        nested_folder = os.path.join(temp_extract, items[0])
+        print(f"Detected nested folder '{items[0]}', moving contents to {extract_to}...")
+        os.makedirs(extract_to, exist_ok=True)
+        for item in os.listdir(nested_folder):
+            shutil.move(os.path.join(nested_folder, item), os.path.join(extract_to, item))
+        shutil.rmtree(temp_extract)
+    else:
+        # No nesting: rename temp to final
+        shutil.rmtree(extract_to, ignore_errors=True)
+        os.rename(temp_extract, extract_to)
+
+    os.remove(zip_path)
+    print("Done.\n")
+
+# Your Google Drive file IDs
+QWEN_FILE_ID = "1e2uvBHoeAM6AGt0MnZCuTD88wh1MY4gf"
+SENTIMENT_FILE_ID = "1dds5X_iIsW2azjVzCIUTSrZQxQPoQPUP"
+
+QWEN_ZIP = "qwen2.5.zip"
+QWEN_LOCAL = "./qwen2.5"
+SENTIMENT_ZIP = "sentiment_model.zip"
+SENTIMENT_LOCAL = "./sentiment_model"
+
+# Download & extract only once
+download_and_extract(QWEN_FILE_ID, QWEN_ZIP, QWEN_LOCAL)
+download_and_extract(SENTIMENT_FILE_ID, SENTIMENT_ZIP, SENTIMENT_LOCAL)
+
+# ------------------- Load Conversational Model -------------------
 print("Loading conversational model...")
-tokenizer = AutoTokenizer.from_pretrained(model_path)
+tokenizer = AutoTokenizer.from_pretrained(QWEN_LOCAL)
 model = AutoModelForCausalLM.from_pretrained(
-    model_path,
-    device_map="cpu",
+    QWEN_LOCAL,
+    device_map="cpu",          # change to "cuda" if you have GPU
     torch_dtype=torch.float32
 )
-print("Conversational model loaded.")
+print("Conversational model loaded.\n")
 
+# ------------------- Load Sentiment Model -------------------
 print("Loading sentiment model...")
 sentiment_pipeline = pipeline(
     "sentiment-analysis",
-    model="./sentiment_model",   # e.g., "./sentiment_model"
-    device="cpu"
+    model=SENTIMENT_LOCAL,
+    device="cpu"               # change to 0 for GPU
 )
-print("Sentiment model loaded.")
+print("Sentiment model loaded.\n")
 
 # ------------------- Sentiment Analysis -------------------
 def analyze_sentiment(text):
@@ -482,10 +537,10 @@ def chat_stream():
         )
     input_length = inputs.input_ids.shape[1]
     bot_reply = tokenizer.decode(outputs[0][input_length:], skip_special_tokens=True).strip()
-    # Enforce Mr Hero identity
+    # Enforce identity
     bot_reply = re.sub(r'(?i)(Alibaba|Aliyun|Alibaba Cloud)', 'Iheruo Ugochukwu R', bot_reply)
     if 'Iheruo' not in bot_reply and 'Mr Iheruo' not in bot_reply:
-        bot_reply =bot_reply
+        bot_reply = bot_reply
 
     # 3. Stream the reply character by character
     def generate():
