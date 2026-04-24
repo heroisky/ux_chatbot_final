@@ -25,14 +25,14 @@ A full-stack AI-powered chatbot that collects user experience feedback, performs
 - Sentiment Model: Local transformer pipeline
 - Database: MySQL
 - Frontend: HTML, CSS, JavaScript
+- Dashboard: PHP (XAMPP / WAMP)
 - Libraries: PyTorch, gdown
 
 ---
 
 ## 📁 Project Structure
 
-## 📁 Project Structure
-
+```
 ux_chatbot_final/
 │
 ├── app.py
@@ -45,20 +45,21 @@ ux_chatbot_final/
 │   ├── tokenizer.json
 │   ├── tokenizer_config.json
 │   ├── model.safetensors
-│   └── (other model files)
+│   └── ...
 │
 ├── sentiment_model/
 │   ├── config.json
 │   ├── vocab.txt
 │   ├── tokenizer_config.json
 │   ├── model.safetensors
-│   └── (other model files)
+│   └── ...
 │
 ├── templates/
 │   └── index.html
 │
 └── ux_dashboard/
-    └── (analytics dashboard files)
+    └── (PHP analytics dashboard files)
+```
 
 ---
 
@@ -66,55 +67,198 @@ ux_chatbot_final/
 
 Models are stored locally:
 
-- qwen2.5/
-- sentiment_model/
+- `qwen2.5/`
+- `sentiment_model/`
 
-They are NOT included in GitHub due to large file size limits.
+They are NOT pushed to GitHub because of size limits.
+
+⚠️ Do NOT use `model_path = "Qwen/Qwen2.5..."` in production unless you want a **multi-GB download (15GB+)**
+
+Instead:
+- Use local folders OR
+- Auto-download ZIP on first run (Google Drive / HuggingFace snapshot)
 
 ---
 
 ## ⚙️ Installation
 
-git clone https://github.com/your-username/ux_chatbot_final.git
+### 1. Clone Project
+
+```bash
+git clone https://github.com/heroisky/ux_chatbot_final.git
 cd ux_chatbot_final
+```
 
+---
+
+### 2. Create Virtual Environment
+
+```bash
 python -m venv venv
-source venv/bin/activate   (Linux/Mac)
-venv\Scripts\activate      (Windows)
 
+# Linux / Mac
+source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
+```
+
+---
+
+### 3. Install Dependencies
+
+```bash
 pip install -r requirements.txt
+```
 
+---
+
+### 4. Setup MySQL Database
+
+Start MySQL (XAMPP / WAMP)
+
+Create database:
+
+```sql
 CREATE DATABASE ux_feedback_db;
+```
 
+Import schema:
+
+```bash
 mysql -u root -p ux_feedback_db < database_schema.sql
+```
 
-Place model folders:
+OR use phpMyAdmin:
+- http://localhost/phpmyadmin
+
+---
+
+### 5. Add Model Files
+
+Place downloaded models here:
+
+```
 qwen2.5/
 sentiment_model/
+```
 
+---
+
+### 6. Run Flask App
+
+```bash
 python app.py
+```
+
+Open:
+
+```
+http://localhost:7860
+```
+
+---
+
+## 📊 Run PHP Dashboard (XAMPP / WAMP)
+
+### 🔹 XAMPP Setup
+
+1. Move project to:
+
+```
+C:\xampp\htdocs\ux_chatbot_final\
+```
+
+2. Start:
+- Apache
+- MySQL
+
+3. Open:
+
+```
+http://localhost/ux_chatbot_final/ux_dashboard/
+```
+
+---
+
+### 🔹 WAMP Setup
+
+1. Move project to:
+
+```
+C:\wamp64\www\ux_chatbot_final\
+```
+
+2. Start WAMP services
+
+3. Open:
+
+```
+http://localhost/ux_chatbot_final/ux_dashboard/
+```
+
+---
+
+## 🔄 System Flow
+
+User Input  
+→ Sentiment Analysis  
+→ Aspect Extraction  
+→ Qwen2.5 Response Generation  
+→ Follow-up Logic  
+→ Store in MySQL  
+→ Analytics Dashboard
 
 ---
 
 ## 📊 Analytics
 
+Flask API:
+```
 http://localhost:7860/analytics
+```
+
+PHP Dashboard:
+```
+http://localhost/ux_chatbot_final/ux_dashboard/
+```
 
 ---
 
-## ⚡ Flow
+## ⚡ Model Warning
 
-User message → Sentiment analysis → Aspect extraction → Qwen2.5 response → Follow-up logic → Store in MySQL → Insights
+- First run may be slow
+- Large models require RAM (8GB+ recommended)
+- CPU mode is used by default
 
 ---
 
-## 🚫 GitHub Limitation
+## 🧯 Troubleshooting
 
-Not included:
-- model.safetensors
-- large transformer weights
+### ❌ Model downloads 1GB
+✔ You used HuggingFace remote model  
+→ Fix: use local `qwen2.5/` folder
 
-Use local ZIP or Google Drive download.
+---
+
+### ❌ MySQL error
+✔ Ensure:
+- MySQL running in XAMPP/WAMP
+- Correct credentials in `app.py`
+
+---
+
+### ❌ PHP dashboard not opening
+✔ Ensure:
+- Apache is running
+- Folder is inside `htdocs` or `www`
+
+---
+
+### ❌ Blank chatbot response
+✔ Check:
+- model files exist
+- no missing tokenizer files
 
 ---
 
