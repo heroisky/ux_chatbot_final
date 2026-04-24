@@ -1,0 +1,760 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Mr Iheruo - UX Feedback Chatbot</title>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <!-- Bootstrap 5 CSS + Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        height: 100vh;
+        display: flex;
+        background: #f0f2f5;
+        overflow: hidden;
+      }
+      .sidebar {
+        width: 280px;
+        background: #2c3e50;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        z-index: 100;
+      }
+      .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid #3e5a6b;
+      }
+      .new-chat-btn {
+        width: 100%;
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+      .new-chat-btn:hover {
+        background: #2980b9;
+      }
+      .conversations-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+      .conversation-item {
+        padding: 12px;
+        margin-bottom: 5px;
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: background 0.2s;
+      }
+      .conversation-item:hover {
+        background: #3e5a6b;
+      }
+      .conversation-item.active {
+        background: #1abc9c;
+        font-weight: bold;
+      }
+      .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: white;
+        position: relative;
+      }
+      .chat-header {
+        padding: 20px;
+        border-bottom: 1px solid #ddd;
+        background: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .hamburger {
+        display: none;
+        font-size: 28px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #2c3e50;
+        padding: 5px 10px;
+        border-radius: 8px;
+      }
+      .hamburger:hover {
+        background: #e9ecef;
+      }
+      .rating-container {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8f9fa;
+        padding: 6px 12px;
+        border-radius: 20px;
+        transition: background 0.2s;
+      }
+      .rating-container:hover {
+        background: #e9ecef;
+      }
+      .stars {
+        color: #ffc107;
+        font-size: 20px;
+        letter-spacing: 2px;
+      }
+      .rating-value {
+        font-weight: bold;
+        color: #2c3e50;
+      }
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .message {
+        display: flex;
+        max-width: 70%;
+      }
+      .user-message {
+        justify-content: flex-end;
+        align-self: flex-end;
+      }
+      .bot-message {
+        justify-content: flex-start;
+        align-self: flex-start;
+      }
+      .message-bubble {
+        padding: 10px 16px;
+        border-radius: 20px;
+        line-height: 1.4;
+        word-wrap: break-word;
+      }
+      .user-message .message-bubble {
+        background: #3498db;
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+      .bot-message .message-bubble {
+        background: #e9ecef;
+        color: #333;
+        border-bottom-left-radius: 4px;
+      }
+      .input-area {
+        display: flex;
+        gap: 10px;
+        padding: 20px;
+        border-top: 1px solid #ddd;
+        background: #fff;
+      }
+      .input-area input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 25px;
+        font-size: 16px;
+        outline: none;
+      }
+      .input-area button {
+        padding: 12px 24px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .thinking {
+        color: #888;
+        font-style: italic;
+        padding: 10px;
+      }
+      .typing-dots::after {
+        content: "";
+        display: inline-block;
+        width: 24px;
+        text-align: left;
+        animation: dots 1.5s steps(4, end) infinite;
+      }
+      @keyframes dots {
+        0%,
+        20% {
+          content: "";
+        }
+        40% {
+          content: ".";
+        }
+        60% {
+          content: "..";
+        }
+        80%,
+        100% {
+          content: "...";
+        }
+      }
+      @media (max-width: 768px) {
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 100%;
+          transform: translateX(-100%);
+          width: 260px;
+          z-index: 200;
+          box-shadow: none;
+        }
+        .sidebar.open {
+          transform: translateX(0);
+          box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+        .hamburger {
+          display: inline-block;
+        }
+        .message {
+          max-width: 85%;
+        }
+      }
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 150;
+      }
+      .sidebar-overlay.active {
+        display: block;
+      }
+      /* Spinner for button */
+      .spinner-small {
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid #fff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button class="new-chat-btn" id="newChatBtn">+ New Chat</button>
+      </div>
+      <div class="conversations-list" id="conversationsList"></div>
+    </div>
+    <div class="chat-area">
+      <div class="chat-header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburgerBtn">☰</button>
+          <h3 id="currentChatTitle">🤖 Mr Iheruo - UX Feedback Assistant</h3>
+        </div>
+        <div class="rating-container" id="ratingContainer">
+          <span class="stars" id="starDisplay">★★★☆☆</span>
+          <span class="rating-value" id="ratingValue">3.0</span>
+          <span>Clik here tio change</span>
+        </div>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="thinking">Loading...</div>
+      </div>
+      <div class="input-area">
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Type your message..."
+          autofocus
+        />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+
+    <!-- Bootstrap Modal -->
+    <div
+      class="modal fade"
+      id="analyticsModal"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="analyticsModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title" id="analyticsModalLabel">
+              <i class="bi bi-graph-up"></i> Conversation Analytics
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div
+            class="modal-body"
+            id="modalContent"
+            style="max-height: 60vh; overflow-y: auto"
+          >
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2">Loading analytics...</p>
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <div class="w-100">
+              <h6>
+                <i class="bi bi-star-fill text-warning"></i> Your Explicit
+                Feedback
+              </h6>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <select id="explicitRating" class="form-select">
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - Average</option>
+                    <option value="2">2 - Poor</option>
+                    <option value="1">1 - Very Bad</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <input
+                    type="text"
+                    id="explicitComment"
+                    class="form-control"
+                    placeholder="Optional comment..."
+                  />
+                </div>
+                <div class="col-md-2">
+                  <button id="submitFeedbackBtn" class="btn btn-primary w-100">
+                    Submit
+                  </button>
+                </div>
+              </div>
+              <div id="feedbackStatus" class="small text-muted mt-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      let currentConversationId = null;
+      let conversations = [];
+      let bsModal = null;
+
+      // Sidebar toggle
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      const hamburger = document.getElementById("hamburgerBtn");
+      function closeSidebar() {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("active");
+      }
+      function openSidebar() {
+        sidebar.classList.add("open");
+        overlay.classList.add("active");
+      }
+      hamburger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (sidebar.classList.contains("open")) closeSidebar();
+        else openSidebar();
+      });
+      overlay.addEventListener("click", closeSidebar);
+      function handleConversationClick(convId) {
+        if (window.innerWidth <= 768) closeSidebar();
+        switchConversation(convId);
+      }
+
+      // Rating display
+      function updateRatingDisplay(rating) {
+        document.getElementById("ratingValue").innerText = rating.toFixed(1);
+        const fullStars = Math.round(rating);
+        let stars = "";
+        for (let i = 1; i <= 5; i++) stars += i <= fullStars ? "★" : "☆";
+        document.getElementById("starDisplay").innerText = stars;
+      }
+
+      // Load conversations
+      async function loadConversations() {
+        const res = await fetch("/api/conversations");
+        conversations = await res.json();
+        renderSidebar();
+        if (conversations.length > 0 && !currentConversationId) {
+          currentConversationId = conversations[0].id;
+          await loadMessages(currentConversationId);
+          await updateHeaderRating(currentConversationId);
+        } else if (conversations.length === 0) {
+          await createNewConversation();
+        } else if (currentConversationId) {
+          const exists = conversations.some(
+            (c) => c.id === currentConversationId,
+          );
+          if (!exists && conversations.length > 0) {
+            currentConversationId = conversations[0].id;
+            await loadMessages(currentConversationId);
+            await updateHeaderRating(currentConversationId);
+          } else if (exists) await updateHeaderRating(currentConversationId);
+        }
+      }
+
+      function renderSidebar() {
+        const container = document.getElementById("conversationsList");
+        container.innerHTML = "";
+        conversations.forEach((conv) => {
+          const div = document.createElement("div");
+          div.className = "conversation-item";
+          if (currentConversationId === conv.id) div.classList.add("active");
+          div.textContent = conv.title;
+          div.onclick = () => handleConversationClick(conv.id);
+          container.appendChild(div);
+        });
+      }
+
+      async function switchConversation(convId) {
+        if (currentConversationId === convId) return;
+        currentConversationId = convId;
+        await loadMessages(convId);
+        await updateHeaderRating(convId);
+        renderSidebar();
+        const conv = conversations.find((c) => c.id === convId);
+        if (conv)
+          document.getElementById("currentChatTitle").innerHTML =
+            `🤖 Mr Iheruo - ${conv.title}`;
+      }
+
+      async function loadMessages(convId) {
+        const res = await fetch(`/api/conversations/${convId}/messages`);
+        const messages = await res.json();
+        renderMessages(messages);
+      }
+
+      function renderMessages(messages) {
+        const container = document.getElementById("chatMessages");
+        container.innerHTML = "";
+        if (messages.length === 0) {
+          container.innerHTML =
+            '<div class="thinking">Start a conversation with Mr Iheruo!</div>';
+          return;
+        }
+        for (let msg of messages) {
+          const messageDiv = document.createElement("div");
+          messageDiv.className = `message ${msg.role === "user" ? "user-message" : "bot-message"}`;
+          const bubble = document.createElement("div");
+          bubble.className = "message-bubble";
+          bubble.textContent = msg.content;
+          messageDiv.appendChild(bubble);
+          container.appendChild(messageDiv);
+        }
+        container.scrollTop = container.scrollHeight;
+      }
+
+      async function updateHeaderRating(convId) {
+        const res = await fetch(`/api/conversation_analytics/${convId}`);
+        const data = await res.json();
+        if (data.timeline && data.timeline.length > 0) {
+          let sum = 0;
+          for (let t of data.timeline) sum += t.sentiment_score;
+          let avgPolarity = sum / data.timeline.length;
+          let rating = ((avgPolarity + 1) / 2) * 4 + 1;
+          rating = Math.min(5, Math.max(1, rating));
+          updateRatingDisplay(rating);
+        } else updateRatingDisplay(3.0);
+      }
+
+      async function createNewConversation() {
+        const res = await fetch("/api/conversations", { method: "POST" });
+        const newConv = await res.json();
+        await loadConversations();
+        currentConversationId = newConv.conversation_id;
+        await loadMessages(currentConversationId);
+        updateRatingDisplay(3.0);
+        renderSidebar();
+        document.getElementById("currentChatTitle").innerHTML =
+          "🤖 Mr Iheruo - New Conversation";
+        if (window.innerWidth <= 768) closeSidebar();
+      }
+
+      // Normal message send (streaming)
+      async function sendMessage() {
+        const input = document.getElementById("messageInput");
+        const message = input.value.trim();
+        if (!message || !currentConversationId) return;
+        input.value = "";
+        const container = document.getElementById("chatMessages");
+        if (
+          container.children.length === 1 &&
+          container.children[0].classList?.contains("thinking")
+        )
+          container.innerHTML = "";
+        // user message
+        const userDiv = document.createElement("div");
+        userDiv.className = "message user-message";
+        const userBubble = document.createElement("div");
+        userBubble.className = "message-bubble";
+        userBubble.textContent = message;
+        userDiv.appendChild(userBubble);
+        container.appendChild(userDiv);
+        container.scrollTop = container.scrollHeight;
+        // bot placeholder
+        const botDiv = document.createElement("div");
+        botDiv.className = "message bot-message";
+        const botBubble = document.createElement("div");
+        botBubble.className = "message-bubble";
+        botBubble.innerHTML =
+          '✍️ Mr Iheruo is thinking<span class="typing-dots"></span>';
+        botDiv.appendChild(botBubble);
+        container.appendChild(botDiv);
+        container.scrollTop = container.scrollHeight;
+        try {
+          const response = await fetch("/api/chat_stream", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message,
+              conversation_id: currentConversationId,
+            }),
+          });
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "",
+            fullReply = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n\n");
+            buffer = lines.pop();
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const data = JSON.parse(line.slice(6));
+                if (data.rating) updateRatingDisplay(data.rating);
+                else if (data.chunk) {
+                  fullReply += data.chunk;
+                  botBubble.textContent = fullReply;
+                  container.scrollTop = container.scrollHeight;
+                } else if (data.done) {
+                  botBubble.textContent = fullReply;
+                  await loadConversations();
+                }
+              }
+            }
+          }
+        } catch (err) {
+          botBubble.textContent = "Sorry, error occurred.";
+          console.error(err);
+        }
+      }
+
+      // Analytics modal content
+      async function showAnalytics() {
+        if (!currentConversationId) return;
+        const modalEl = document.getElementById("analyticsModal");
+        if (!bsModal) bsModal = new bootstrap.Modal(modalEl);
+        const contentDiv = document.getElementById("modalContent");
+        contentDiv.innerHTML =
+          '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading analytics...</p></div>';
+        bsModal.show();
+        try {
+          const res = await fetch(
+            `/api/conversation_analytics/${currentConversationId}`,
+          );
+          const data = await res.json();
+          let html = "";
+          // Timeline
+          html += `<div class="mb-4"><h6><i class="bi bi-clock-history"></i> Sentiment Timeline</h6><ul class="list-group list-group-flush small">`;
+          for (let item of data.timeline) {
+            const date = new Date(item.timestamp).toLocaleTimeString();
+            html += `<li class="list-group-item d-flex justify-content-between">${date}: <span class="badge ${item.sentiment_label === "positive" ? "bg-success" : item.sentiment_label === "negative" ? "bg-danger" : "bg-secondary"}">${item.sentiment_label} (${item.sentiment_score.toFixed(2)})</span></li>`;
+          }
+          html += `</ul></div>`;
+          // Aspects
+          html += `<div class="mb-4"><h6><i class="bi bi-tags"></i> Aspect Sentiments</h6>`;
+          const aspectMap = {};
+          for (let asp of data.aspects) {
+            if (!aspectMap[asp.aspect])
+              aspectMap[asp.aspect] = { positive: 0, negative: 0, neutral: 0 };
+            aspectMap[asp.aspect][asp.sentiment_label] += asp.count;
+          }
+          for (let [aspect, counts] of Object.entries(aspectMap)) {
+            const total = counts.positive + counts.negative + counts.neutral;
+            const posPercent = total ? (counts.positive / total) * 100 : 0;
+            const negPercent = total ? (counts.negative / total) * 100 : 0;
+            html += `<div class="mb-2"><strong>${aspect}</strong><div class="progress" style="height: 25px;"><div class="progress-bar bg-success" style="width: ${posPercent}%">👍 ${counts.positive}</div><div class="progress-bar bg-danger" style="width: ${negPercent}%">👎 ${counts.negative}</div><div class="progress-bar bg-secondary" style="width: ${100 - posPercent - negPercent}%">😐 ${counts.neutral}</div></div></div>`;
+          }
+          html += `</div>`;
+          // Explicit feedback history
+          if (data.explicit_feedback && data.explicit_feedback.length > 0) {
+            html += `<div class="mb-4"><h6><i class="bi bi-chat-dots"></i> Your Previous Feedback</h6><ul class="list-group list-group-flush small">`;
+            for (let fb of data.explicit_feedback) {
+              html += `<li class="list-group-item">⭐ ${fb.rating}/5 – “${fb.comment || "no comment"}” <span class="text-muted">(${new Date(fb.timestamp).toLocaleString()})</span></li>`;
+            }
+            html += `</ul></div>`;
+          }
+          // Insights
+          if (data.insights && data.insights.top_complaints) {
+            html += `<div class="mb-4"><h6><i class="bi bi-lightbulb"></i> Insights</h6><strong>Top complaints:</strong><ul>`;
+            for (let c of data.insights.top_complaints) html += `<li>${c}</li>`;
+            html += `</ul><strong>Top praises:</strong><ul>`;
+            for (let p of data.insights.top_praises) html += `<li>${p}</li>`;
+            html += `</ul><strong>Suggestions:</strong><ul>`;
+            for (let s of data.insights.suggested_improvements || [])
+              html += `<li>${s}</li>`;
+            html += `</ul></div>`;
+          }
+          contentDiv.innerHTML = html;
+        } catch (e) {
+          contentDiv.innerHTML =
+            '<div class="alert alert-danger">Failed to load analytics.</div>';
+          console.error(e);
+        }
+      }
+
+      // Explicit feedback submission with loader fix and streaming-like bot response
+      async function submitExplicitFeedback() {
+        const rating = document.getElementById("explicitRating").value;
+        const comment = document.getElementById("explicitComment").value;
+        const statusDiv = document.getElementById("feedbackStatus");
+        const submitBtn = document.getElementById("submitFeedbackBtn");
+        if (!currentConversationId) {
+          statusDiv.innerText = "No active conversation.";
+          return;
+        }
+        // Disable button, show spinner
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML =
+          '<span class="spinner-small"></span> Submitting...';
+        statusDiv.innerText = "";
+        try {
+          const response = await fetch("/api/explicit_feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              conversation_id: currentConversationId,
+              rating: parseInt(rating),
+              comment,
+            }),
+          });
+          const data = await response.json();
+          if (response.ok) {
+            // Close modal
+            if (bsModal) bsModal.hide();
+            // Reload messages to show the new user feedback message
+            await loadMessages(currentConversationId);
+            await updateHeaderRating(currentConversationId);
+            await loadConversations();
+            // Now simulate bot typing and acknowledgment (streaming effect)
+            const container = document.getElementById("chatMessages");
+            // Create bot placeholder with typing indicator
+            const botDiv = document.createElement("div");
+            botDiv.className = "message bot-message";
+            const botBubble = document.createElement("div");
+            botBubble.className = "message-bubble";
+            botBubble.innerHTML = '✍️Thinking<span class="typing-dots"></span>';
+            botDiv.appendChild(botBubble);
+            container.appendChild(botDiv);
+            container.scrollTop = container.scrollHeight;
+            // Stream acknowledgment text character by character
+            const ack =
+              data.acknowledgment ||
+              "Thank you for your feedback! I'll remember that.";
+            botBubble.innerHTML = ""; // clear typing indicator
+            let i = 0;
+            function typeNext() {
+              if (i < ack.length) {
+                botBubble.innerHTML += ack.charAt(i);
+                i++;
+                container.scrollTop = container.scrollHeight;
+                setTimeout(typeNext, 25);
+              } else {
+                // Optionally save this acknowledgment to DB? Already saved by backend.
+              }
+            }
+            typeNext();
+            // Clear comment field
+            document.getElementById("explicitComment").value = "";
+          } else {
+            statusDiv.innerText = data.error || "Submission failed.";
+            statusDiv.classList.add("text-danger");
+          }
+        } catch (e) {
+          statusDiv.innerText = "Network error.";
+          statusDiv.classList.add("text-danger");
+          console.error(e);
+        } finally {
+          // Re-enable button, restore text
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+          setTimeout(() => {
+            statusDiv.innerText = "";
+            statusDiv.classList.remove("text-danger");
+          }, 3000);
+        }
+      }
+
+      // Event listeners
+      document
+        .getElementById("newChatBtn")
+        .addEventListener("click", createNewConversation);
+      document.getElementById("sendBtn").addEventListener("click", sendMessage);
+      document
+        .getElementById("messageInput")
+        .addEventListener("keypress", (e) => {
+          if (e.key === "Enter") sendMessage();
+        });
+      document
+        .getElementById("ratingContainer")
+        .addEventListener("click", showAnalytics);
+      document
+        .getElementById("submitFeedbackBtn")
+        .addEventListener("click", submitExplicitFeedback);
+      // Initialize
+      loadConversations();
+    </script>
+  </body>
+</html>

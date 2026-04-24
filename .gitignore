@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+venv/
+qwen2.5/
+sentiment_model/
+sentiment_model/
